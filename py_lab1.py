@@ -233,6 +233,8 @@ def simulate_infinite(rho):
     print("Average packets in the queue: " + str(r_avrg_pkts))
     print("Possibility of idle case: " + str(r_p_idle))
 
+    print(len(o_average_pkts))
+
 
 def simulate_finite(rho, K):
     r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(rho, K)
@@ -255,13 +257,17 @@ def main():
     '''
         Command out this block if you want to test for customed rho 
     '''
-    o_average_pkts = []
-    o_p_idle = []
+    # o_average_pkts = []
+    # o_p_idle = []
     queue_utilization_array = list(range(25, 105, 10))
 
     for m_lambda in queue_utilization_array:
         simulate_infinite(m_lambda/100)
-        
+
+    
+    print(len(o_average_pkts))
+    print(o_average_pkts)
+
     print("Average packets in the queue: ---------->")
     for avrg_pkt in o_average_pkts:
         print(avrg_pkt) 
@@ -273,12 +279,8 @@ def main():
 
 # # =============== Finite Buffer Queue ==============
 #     '''
-#         Command out this block if you want to test for customed rho 
+#         Command out this blo`ck if you want to test for customed rho 
 #     '''
-
-#     o_average_pkts = []
-#     o_p_idle = []
-#     o_p_drop = []
 
 #     K = [10, 25, 50]
 #     queue_utilization_array = list(range(250, 1000, 50))
