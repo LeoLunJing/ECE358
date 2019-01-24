@@ -18,6 +18,9 @@ departure_array = []
 observer_array = []
 
 # z_lambda = 75
+o_average_pkts = []
+o_p_idle = []
+o_p_drop = []
 
 def generate_random(lambda_para):
     return - (1 / lambda_para) * math.log(1 - random.uniform(0, 1))
@@ -79,6 +82,7 @@ def infinite_buffer(rho):
 
 
     for event in event_array:
+        # print(event)
         if event[0] == "Arrival":
             c_arrival+=1
         if event[0] == "Departure":
@@ -87,8 +91,8 @@ def infinite_buffer(rho):
             c_observation+=1
             if c_arrival == c_departure:
                 c_idle+=1
-            else:
-                packets_in_queue.append(c_arrival-c_departure)
+
+            packets_in_queue.append(c_arrival-c_departure)
     
     average_pkts_in_queue = sum(packets_in_queue) / len(packets_in_queue)
     p_idle = c_idle/c_observation
@@ -191,8 +195,7 @@ def finite_buffer(rho, K):
             c_observation+=1
             if c_arrival == c_departure:
                 c_idle+=1
-            else:
-                packets_in_queue.append(c_arrival-c_departure)
+            packets_in_queue.append(c_arrival-c_departure)
 
         evt_ctr += 1
         # event_array.pop(0)
@@ -221,59 +224,92 @@ def finite_buffer(rho, K):
 #     return
 
 
+def simulate_infinite(rho):
+    r_avrg_pkts, r_p_idle = infinite_buffer(rho)
+    o_average_pkts.append(r_avrg_pkts)
+    o_p_idle.append(r_p_idle)
+    print("==============================================")
+    print("For rho = " + str(rho) + ":")
+    print("Average packets in the queue: " + str(r_avrg_pkts))
+    print("Possibility of idle case: " + str(r_p_idle))
+
+
+def simulate_finite(rho, K):
+    r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(rho, K)
+    o_average_pkts.append(r_avrg_pkts)
+    o_p_idle.append(r_p_idle)
+    o_p_drop.append(p_pkt_drop)
+    print("==============================================")
+    print("For rho = " + str(rho) + ":")
+    print("Average packets in the queue: " + str(r_avrg_pkts))
+    print("Possibility of idle case: " + str(r_p_idle))
+    print("Possibility of packet drop: " + str(p_pkt_drop))
+
+
 def main():
-    simulate_infinite()
-    # simulate_finite()
+    '''
+        To run the result for a single rho, just do simulate_infinite(rho) or simulate_finite(rho, K)
+    '''
 
-
-def simulate_infinite():
+# =============== Infinite Buffer Queue ==============
+    '''
+        Command out this block if you want to test for customed rho 
+    '''
     o_average_pkts = []
     o_p_idle = []
+    queue_utilization_array = list(range(25, 105, 10))
 
-    # =============== Infinite Buffer Queue ==============
-
-    queue_utilization_array = list(range(25, 95, 10))
-    # t_util_array = []
     for m_lambda in queue_utilization_array:
-        # t_util_array.append(L * m_lambda / C)
-        r_avrg_pkts, r_p_idle = infinite_buffer(m_lambda/100)
-        o_average_pkts.append(r_avrg_pkts)
-        o_p_idle.append(r_p_idle)
-        print("==============================================")
-        print("For rho = " + str(m_lambda/100) + ":")
-        print("Average packets in the queue: " + str(r_avrg_pkts))
-        print("Possibility of idle case: " + str(r_p_idle))
-
-    # print(t_util_array)
-    print(o_average_pkts)
-    print(o_p_idle)
-
-def simulate_finite():
-    o_average_pkts = []
-    o_p_idle = []
-
-    # =============== Finite Buffer Queue ==============
-    K = [10, 25, 50]
-    queue_utilization_array = list(range(250, 1000, 50))
-    queue_utilization_array.extend(list(range(1000,2500,100)))
-    queue_utilization_array.extend(list(range(2500,5200,200)))
-
-    t_util_array = []
-    for m_lambda in queue_utilization_array:
-        # t_util_array.append(L * m_lambda / C)
-        r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(m_lambda, 10)
-        o_average_pkts.append(r_avrg_pkts)
-        o_p_idle.append(r_p_idle)
-        print("==============================================")
-        print("For rho = " + str(m_lambda * L / C) + ":")
-        print("Average packets in the queue: " + str(r_avrg_pkts))
-        print("Possibility of idle case: " + str(r_p_idle))
-        print("Possibility of packet drop: " + str(p_pkt_drop))
+        simulate_infinite(m_lambda/100)
         
-    # print(t_util_array)
-    print(o_average_pkts)
-    print(o_p_idle)
+    print("Average packets in the queue: ---------->")
+    for avrg_pkt in o_average_pkts:
+        print(avrg_pkt) 
+    
+    print("Possibility of idle case: ---------->")
+    for p_idle in o_p_idle:
+        print(p_idle) 
 
+
+# # =============== Finite Buffer Queue ==============
+#     '''
+#         Command out this block if you want to test for customed rho 
+#     '''
+
+#     o_average_pkts = []
+#     o_p_idle = []
+#     o_p_drop = []
+
+#     K = [10, 25, 50]
+#     queue_utilization_array = list(range(250, 1000, 50))
+#     queue_utilization_array.extend(list(range(1000,2500,100)))
+#     queue_utilization_array.extend(list(range(2500,5200,200)))
+
+#     for m_lambda in queue_utilization_array:
+#         r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(m_lambda, 10)
+#         o_average_pkts.append(r_avrg_pkts)
+#         o_p_idle.append(r_p_idle)
+#         o_p_drop.append(p_pkt_drop)
+#         print("==============================================")
+#         print("For rho = " + str(m_lambda * L / C) + ":")
+#         print("Average packets in the queue: " + str(r_avrg_pkts))
+#         print("Possibility of idle case: " + str(r_p_idle))
+#         print("Possibility of packet drop: " + str(p_pkt_drop))
+        
+#     print("Average packets in the queue: ---------->")
+#     for avrg_pkt in o_average_pkts:
+#         print(avrg_pkt) 
+    
+#     print("Possibility of idle case: ---------->")
+#     for p_idle in o_p_idle:
+#         print(p_idle) 
+    
+#     print("Possibility of packet drops: ---------->")
+#     for p_drop in o_p_drop:
+#         print(p_drop) 
+
+
+# END MAIN
 
 if __name__ == '__main__':
    main()
