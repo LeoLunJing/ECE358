@@ -163,7 +163,7 @@ def finite_buffer(rho, K):
 
     while evt_ctr < len(event_array):
     # while event_array:
-        print(len(event_array))
+        # print(len(event_array))
         if event_array[evt_ctr][0] == "Arrival":
             c_generated+=1
             packet_arrival = event_array[evt_ctr][1]
@@ -254,19 +254,41 @@ def main():
     '''
 
 # =============== Infinite Buffer Queue ==============
-    '''
-        Command out this block if you want to test for customed rho 
-    '''
-    # o_average_pkts = []
-    # o_p_idle = []
-    queue_utilization_array = list(range(25, 105, 10))
+    # '''
+    #     Command out this block if you want to test for customed rho 
+    # '''
+    # # o_average_pkts = []
+    # # o_p_idle = []
+    # queue_utilization_array = list(range(25, 105, 10))
 
-    for m_lambda in queue_utilization_array:
-        simulate_infinite(m_lambda/100)
+    # for m_lambda in queue_utilization_array:
+    #     simulate_infinite(m_lambda/100)
 
     
-    print(len(o_average_pkts))
-    print(o_average_pkts)
+    # print(len(o_average_pkts))
+    # print(o_average_pkts)
+
+    # print("Average packets in the queue: ---------->")
+    # for avrg_pkt in o_average_pkts:
+    #     print(avrg_pkt) 
+    
+    # print("Possibility of idle case: ---------->")
+    # for p_idle in o_p_idle:
+    #     print(p_idle) 
+
+
+# # =============== Finite Buffer Queue ==============
+    '''
+        Command out this blo`ck if you want to test for customed rho 
+    '''
+
+    K = [10, 25, 50]
+    queue_utilization_array = list(range(40, 200, 10))
+    queue_utilization_array.extend(list(range(200,500,20)))
+    queue_utilization_array.extend(list(range(500,1000,40)))
+
+    for m_lambda in queue_utilization_array:
+        simulate_finite(m_lambda/100, 10)
 
     print("Average packets in the queue: ---------->")
     for avrg_pkt in o_average_pkts:
@@ -276,39 +298,9 @@ def main():
     for p_idle in o_p_idle:
         print(p_idle) 
 
-
-# # =============== Finite Buffer Queue ==============
-#     '''
-#         Command out this blo`ck if you want to test for customed rho 
-#     '''
-
-#     K = [10, 25, 50]
-#     queue_utilization_array = list(range(250, 1000, 50))
-#     queue_utilization_array.extend(list(range(1000,2500,100)))
-#     queue_utilization_array.extend(list(range(2500,5200,200)))
-
-#     for m_lambda in queue_utilization_array:
-#         r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(m_lambda, 10)
-#         o_average_pkts.append(r_avrg_pkts)
-#         o_p_idle.append(r_p_idle)
-#         o_p_drop.append(p_pkt_drop)
-#         print("==============================================")
-#         print("For rho = " + str(m_lambda * L / C) + ":")
-#         print("Average packets in the queue: " + str(r_avrg_pkts))
-#         print("Possibility of idle case: " + str(r_p_idle))
-#         print("Possibility of packet drop: " + str(p_pkt_drop))
-        
-#     print("Average packets in the queue: ---------->")
-#     for avrg_pkt in o_average_pkts:
-#         print(avrg_pkt) 
-    
-#     print("Possibility of idle case: ---------->")
-#     for p_idle in o_p_idle:
-#         print(p_idle) 
-    
-#     print("Possibility of packet drops: ---------->")
-#     for p_drop in o_p_drop:
-#         print(p_drop) 
+    print("Possibility of packet drops: ---------->")
+    for p_drop in o_p_drop:
+        print(p_drop) 
 
 
 # END MAIN
