@@ -2,6 +2,10 @@ import random
 import math
 import bisect
 
+ARRIVAL = 0
+DEPARTURE = 1
+OBSERVER = 2
+
 L = 2000
 # arrival_rate = 75
 C = 1000000
@@ -11,11 +15,6 @@ T = 1000
 # queue_utilization = L * arrival_rate / C
 
 # public_size = 1000
-arrival_array = []
-length_array = []
-service_array = []
-departure_array = []
-observer_array = []
 
 # z_lambda = 75
 o_average_pkts = []
@@ -34,8 +33,6 @@ def generate_random_array(lambda_para):
         expo_random_array.append(expo_random)
 
     return expo_random_array
-
-
             
 def infinite_buffer(rho):
     # Generate observer array, arrival array, and departure array 
@@ -43,6 +40,9 @@ def infinite_buffer(rho):
     packet_arrival = 0
     observer_time = 0
     departure_time = 0
+    arrival_array = []
+    departure_array = []
+    observer_array = []
     event_array = []
     packets_in_queue = []
     observer_rate = 5 * arrival_rate
@@ -64,13 +64,13 @@ def infinite_buffer(rho):
 
     # Generate Event array
     for arrival in arrival_array:
-        event_array.append(["Arrival", arrival])
+        event_array.append((ARRIVAL, arrival))
     
     for departure in departure_array:
-        event_array.append(["Departure", departure])
+        event_array.append((DEPARTURE, departure))
     
     for observer in observer_array:
-        event_array.append(["Observer", observer])
+        event_array.append((OBSERVER, observer))
     
     event_array.sort(key=lambda x: x[1])
 
@@ -83,11 +83,11 @@ def infinite_buffer(rho):
 
     for event in event_array:
         # print(event)
-        if event[0] == "Arrival":
+        if event[0] == ARRIVAL:
             c_arrival+=1
-        if event[0] == "Departure":
+        if event[0] == DEPARTURE:
             c_departure+=1
-        if event[0] == "Observer":
+        if event[0] == OBSERVER:
             c_observation+=1
             if c_arrival == c_departure:
                 c_idle+=1
@@ -99,7 +99,6 @@ def infinite_buffer(rho):
 
     return average_pkts_in_queue, p_idle
 
-# def insert_event(event_list, time):
 def insert_event(event_list, event_ctr, time):
     first = event_ctr
     last = len(event_list)-1
@@ -120,13 +119,15 @@ def insert_event(event_list, event_ctr, time):
     # while event_array[index][1] is not None and event_array[index][1] < time and index < len(event_array)-1:
     #     index+=1
 
-    # event_list.insert(index, ["Departure", time])
+    # event_list.insert(index, (DEPARTURE, time))
 
 def finite_buffer(rho, K):
     # Generate observer array, arrival array, and departure array 
     arrival_rate = (rho * C)/L
     packet_arrival = 0
     observer_time = 0
+    arrival_array = []
+    observer_array = []
     event_array = []
     packets_in_queue = []
     observer_rate = 5 * arrival_rate
@@ -141,10 +142,10 @@ def finite_buffer(rho, K):
 
     # Generate Event array
     for arrival in arrival_array:
-        event_array.append(["Arrival", arrival])
+        event_array.append((ARRIVAL, arrival))
     
     for observer in observer_array:
-        event_array.append(["Observer", observer])
+        event_array.append((OBSERVER, observer))
     
     event_array.sort(key=lambda x: x[1])
 
@@ -162,9 +163,8 @@ def finite_buffer(rho, K):
     evt_ctr = 0
 
     while evt_ctr < len(event_array):
-    # while event_array:
         # print(len(event_array))
-        if event_array[evt_ctr][0] == "Arrival":
+        if event_array[evt_ctr][0] == ARRIVAL:
             c_generated+=1
             packet_arrival = event_array[evt_ctr][1]
             if queue < K:
@@ -181,25 +181,21 @@ def finite_buffer(rho, K):
                 # while event_array[index][1] is not None and event_array[index][1] < time and index < len(event_array)-1:
                 #     index+=1
                 
-                event_array.insert(insert_event(event_array, evt_ctr, departure_time), ["Departure", departure_time])
-                # index = insert_event(event_array, time)
-                # event_array = event_array[:index] + [["Departure", time]] + event_array[index + 1:]
+                event_array.insert(insert_event(event_array, evt_ctr, departure_time), [DEPARTURE, departure_time])
 
                 # insert_event(event_array, packet_arrival + (generate_random(1/L))/C)
             else:
                 c_droped+=1       
-        if event_array[evt_ctr][0] == "Departure":
+        if event_array[evt_ctr][0] == DEPARTURE:
             c_departure+=1
             queue-=1
-        if event_array[evt_ctr][0] == "Observer":
+        if event_array[evt_ctr][0] == OBSERVER:
             c_observation+=1
             if c_arrival == c_departure:
                 c_idle+=1
             packets_in_queue.append(c_arrival-c_departure)
 
         evt_ctr += 1
-        # event_array.pop(0)
-
     
     average_pkts_in_queue = sum(packets_in_queue) / len(packets_in_queue)
     p_idle = c_idle/c_observation
@@ -208,9 +204,9 @@ def finite_buffer(rho, K):
 
 # def process_event(event):
 #     event_switch = {
-#         "Arrival" : process_arrival,
-#         "Departure" : process_departure,
-#         "Observer" : process_observation
+#         ARRIVAL : process_arrival,
+#         DEPARTURE : process_departure,
+#         OBSERVER : process_observation
 #     }
 #     event_switch[event[0]](event[1])
 
