@@ -1,28 +1,19 @@
 import random
 import math
 import bisect
+import argparse
 
 ARRIVAL = 0
 DEPARTURE = 1
 OBSERVER = 2
 
 L = 2000
-# arrival_rate = 75
 C = 1000000
-T = 1000
-
-# observer_rate = 50
-# queue_utilization = L * arrival_rate / C
-
-# public_size = 1000
-
-# z_lambda = 75
-o_average_pkts = []
-o_p_idle = []
-o_p_drop = []
+T = 100
 
 def generate_random(lambda_para):
     return - (1 / lambda_para) * math.log(1 - random.uniform(0, 1))
+
 
 def generate_random_array(lambda_para):
     expo_random_array = []
@@ -33,26 +24,29 @@ def generate_random_array(lambda_para):
         expo_random_array.append(expo_random)
 
     return expo_random_array
-            
+
+
 def infinite_buffer(rho):
     # Generate observer array, arrival array, and departure array 
     arrival_rate = (rho * C)/L
-    packet_arrival = 0
-    observer_time = 0
+    observer_rate = 5 * arrival_rate
+
+    packet_arrival_time = 0
     departure_time = 0
+    observer_time = 0
+
     arrival_array = []
     departure_array = []
     observer_array = []
     event_array = []
     packets_in_queue = []
-    observer_rate = 5 * arrival_rate
 
-    while packet_arrival < T:
-        packet_arrival += generate_random(arrival_rate)
-        arrival_array.append(packet_arrival)
+    while packet_arrival_time < T:
+        packet_arrival_time += generate_random(arrival_rate)
+        arrival_array.append(packet_arrival_time)
         service_time = (generate_random(1/L))/C
-        if packet_arrival > departure_time:
-            departure_time = packet_arrival + service_time
+        if packet_arrival_time > departure_time:
+            departure_time = packet_arrival_time + service_time
         else: 
             departure_time+=service_time
 
@@ -99,6 +93,7 @@ def infinite_buffer(rho):
 
     return average_pkts_in_queue, p_idle
 
+
 def insert_event(event_list, event_ctr, time):
     first = event_ctr
     last = len(event_list)-1
@@ -121,20 +116,23 @@ def insert_event(event_list, event_ctr, time):
 
     # event_list.insert(index, (DEPARTURE, time))
 
+
 def finite_buffer(rho, K):
     # Generate observer array, arrival array, and departure array 
     arrival_rate = (rho * C)/L
-    packet_arrival = 0
+    observer_rate = 5 * arrival_rate
+
+    packet_arrival_time = 0
     observer_time = 0
+
     arrival_array = []
     observer_array = []
     event_array = []
     packets_in_queue = []
-    observer_rate = 5 * arrival_rate
 
-    while packet_arrival < T:
-        packet_arrival += generate_random(arrival_rate)
-        arrival_array.append(packet_arrival)
+    while packet_arrival_time < T:
+        packet_arrival_time += generate_random(arrival_rate)
+        arrival_array.append(packet_arrival_time)
 
     while observer_time < T:
         observer_time += generate_random(observer_rate)
@@ -166,24 +164,24 @@ def finite_buffer(rho, K):
         # print(len(event_array))
         if event_array[evt_ctr][0] == ARRIVAL:
             c_generated+=1
-            packet_arrival = event_array[evt_ctr][1]
+            packet_arrival_time = event_array[evt_ctr][1]
             if queue < K:
                 c_arrival+=1
                 queue+=1 
                 # time = event_array[evt_ctr][1] + (generate_random(1/L))/C
 
                 service_time = (generate_random(1/L))/C
-                if packet_arrival > departure_time:
-                    departure_time = packet_arrival + service_time
+                if packet_arrival_time > departure_time:
+                    departure_time = packet_arrival_time + service_time
                 else: 
                     departure_time+=service_time
                 # index = 0
                 # while event_array[index][1] is not None and event_array[index][1] < time and index < len(event_array)-1:
                 #     index+=1
                 
-                event_array.insert(insert_event(event_array, evt_ctr, departure_time), [DEPARTURE, departure_time])
+                # event_array.insert(insert_event(event_array, evt_ctr, departure_time), [DEPARTURE, departure_time])
 
-                # insert_event(event_array, packet_arrival + (generate_random(1/L))/C)
+                # insert_event(event_array, packet_arrival_time + (generate_random(1/L))/C)
             else:
                 c_droped+=1       
         if event_array[evt_ctr][0] == DEPARTURE:
@@ -202,114 +200,72 @@ def finite_buffer(rho, K):
 
     return average_pkts_in_queue, p_idle, c_droped/c_generated
 
-# def process_event(event):
-#     event_switch = {
-#         ARRIVAL : process_arrival,
-#         DEPARTURE : process_departure,
-#         OBSERVER : process_observation
-#     }
-#     event_switch[event[0]](event[1])
-
-# def process_arrival(time):
-#     return
-
-# def process_observation(time):
-#     return
-    
-# def process_departure(time):
-#     return
-
 
 def simulate_infinite(rho):
     r_avrg_pkts, r_p_idle = infinite_buffer(rho)
-    o_average_pkts.append(r_avrg_pkts)
-    o_p_idle.append(r_p_idle)
-    print("==============================================")
-    print("For rho = " + str(rho) + ":")
-    print("Average packets in the queue: " + str(r_avrg_pkts))
-    print("Possibility of idle case: " + str(r_p_idle))
-
-    print(len(o_average_pkts))
+    print(str(rho) + "," + str(r_avrg_pkts) + "," + str(r_p_idle))
 
 
 def simulate_finite(rho, K):
     r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(rho, K)
-    o_average_pkts.append(r_avrg_pkts)
-    o_p_idle.append(r_p_idle)
-    o_p_drop.append(p_pkt_drop)
-    print("==============================================")
-    print("For rho = " + str(rho) + ":")
-    print("Average packets in the queue: " + str(r_avrg_pkts))
-    print("Possibility of idle case: " + str(r_p_idle))
-    print("Possibility of packet drop: " + str(p_pkt_drop))
+    print(str(rho) + "," + str(r_avrg_pkts) + "," + str(r_p_idle) + "," + str(p_pkt_drop))
 
 
 def main():
-    '''
-        To run the result for a single rho, just do simulate_infinite(rho) or simulate_finite(rho, K)
-    '''
+    global T
 
-# =============== Infinite Buffer Queue ==============
-    # '''
-    #     Command out this block if you want to test for customed rho 
-    # '''
-    # # o_average_pkts = []
-    # # o_p_idle = []
-    # queue_utilization_array = list(range(25, 105, 10))
+    parser = argparse.ArgumentParser(description='Simulate networking packet buffer (ECE358 Lab1)')
+    parser.add_argument('-K', '--queue_size', metavar='n', type=int, default=None,
+                        help='Size of the queue/buffer (default: infinite)')
+    parser.add_argument('-T', '--time_units', metavar='t', type=int, default=100,
+                        help='Time units to run each simulation for')
+    parser.add_argument('-R', '--rho', metavar='r', type=float, default=None,
+                        help='Rho value to simulate (no value implies range from [0.4, 10])')
 
-    # for m_lambda in queue_utilization_array:
-    #     simulate_infinite(m_lambda/100)
+    parser.add_argument('-Q1', '--question1', action='store_true',
+                        help='Calculate the values for question 1')
 
-    
-    # print(len(o_average_pkts))
-    # print(o_average_pkts)
+    args = parser.parse_args()
+    K = args.queue_size
+    T = args.time_units
+    rho = args.rho
 
-    # print("Average packets in the queue: ---------->")
-    # for avrg_pkt in o_average_pkts:
-    #     print(avrg_pkt) 
-    
-    # print("Possibility of idle case: ---------->")
-    # for p_idle in o_p_idle:
-    #     print(p_idle) 
+    if args.question1:
+        expo_random_array = generate_random_array(75)
 
+        mean = sum(expo_random_array) / 1000
+        variance = sum([(number - mean)**2 for number in expo_random_array]) / 1000
 
-# # =============== Finite Buffer Queue ==============
-    '''
-        Command out this blo`ck if you want to test for customed rho 
-    '''
+        # print(expo_random_array)
+        print('mean ' + str(mean))
+        print('variance ' + str(variance))
 
-    K = [10, 25, 50]
+        exit()
+
+    header = '"Rho","E[N]","P(IDLE)"'
+    if K is not None:
+        header += ',"P(LOSS)"'
+    print(header)
+
     queue_utilization_array = list(range(40, 200, 10))
     queue_utilization_array.extend(list(range(200,500,20)))
     queue_utilization_array.extend(list(range(500,1000,40)))
 
-    for m_lambda in queue_utilization_array:
-        simulate_finite(m_lambda/100, 10)
-
-    print("Average packets in the queue: ---------->")
-    for avrg_pkt in o_average_pkts:
-        print(avrg_pkt) 
-    
-    print("Possibility of idle case: ---------->")
-    for p_idle in o_p_idle:
-        print(p_idle) 
-
-    print("Possibility of packet drops: ---------->")
-    for p_drop in o_p_drop:
-        print(p_drop) 
-
+    if K is None:
+        if rho is None:
+            for rho_index in queue_utilization_array:
+                simulate_infinite(rho_index/100)
+        else:
+            simulate_infinite(rho)
+    else:
+        if rho is None:
+            for rho_index in queue_utilization_array:
+                simulate_finite(rho_index/100, K)
+        else:
+            simulate_finite(rho, K)
 
 # END MAIN
 
 if __name__ == '__main__':
    main()
 
-        # observer_array = generate_random_array(observer_rate)
-
-
-# mean = sum(expo_random_array) / 1000
-# variance = sum([(number - mean)**2 for number in expo_random_array]) / 1000
-
-# print(expo_random_array)
-# print('mean ' + str(mean))
-# print('variance ' + str(variance))
