@@ -1,20 +1,36 @@
 import random
 import math
-import bisect
 import argparse
 
+####################################################
+############### Event type constants ###############
+####################################################
 ARRIVAL = 0
 DEPARTURE = 1
 OBSERVER = 2
 
+####################################################
+############### Parameter Constants ################
+####################################################
 L = 2000
 C = 1000000
 T = 100
 
+# Generate exponential random variable
+# Generate a variable based on a Poisson distribution following:
+# var = -(1/lambda_para) * ln(1 - U)
+# @param lambda_para - float: Lambda parameter for random variable from
+#                           the equation mentioned above.
+# @return float: exponential random variable.
 def generate_random(lambda_para):
     return - (1 / lambda_para) * math.log(1 - random.uniform(0, 1))
 
-
+# Generate array of exponential random variables
+# Generate a list of length 1000 consisting of random variables following
+# a Poisson distribution following: var = -(1/lambda_para) * ln(1 - U)
+# @param lambda_para - float: Lambda parameter for random variables from
+#                           the equation mentioned above.
+# @return list[float]: list of exponential random variables.
 def generate_random_array(lambda_para):
     expo_random_array = []
 
@@ -25,9 +41,12 @@ def generate_random_array(lambda_para):
 
     return expo_random_array
 
-
+# Simulate an M/M/1 queue
+# Simulate a queue/buffer with an infinite length that processes arrival,
+# departure, and observer event packets.
+# @param rho - float: Rho parameter for utilization of the queue.
+# @return (float, float): A tuple of (E[N], P(IDLE))
 def infinite_buffer(rho):
-    # Generate observer array, arrival array, and departure array 
     arrival_rate = (rho * C)/L
     observer_rate = 5 * arrival_rate
 
@@ -41,6 +60,7 @@ def infinite_buffer(rho):
     event_array = []
     packets_in_queue = []
 
+    # Generate observer array, arrival array, and departure array 
     while packet_arrival_time < T:
         packet_arrival_time += generate_random(arrival_rate)
         arrival_array.append(packet_arrival_time)
@@ -68,32 +88,41 @@ def infinite_buffer(rho):
     
     event_array.sort(key=lambda x: x[1])
 
-    # Simulation start here
+    # Begin simulation
+
+    # Counters
     c_arrival = 0
     c_departure = 0
     c_observation = 0
     c_idle = 0
 
-
     for event in event_array:
         # print(event)
         if event[0] == ARRIVAL:
             c_arrival+=1
-        if event[0] == DEPARTURE:
+        elif event[0] == DEPARTURE:
             c_departure+=1
-        if event[0] == OBSERVER:
+        elif event[0] == OBSERVER:
             c_observation+=1
+            packets_in_queue.append(c_arrival-c_departure)
+            # If all packets that arrived have departed, then queue is empty
             if c_arrival == c_departure:
                 c_idle+=1
-
-            packets_in_queue.append(c_arrival-c_departure)
     
     average_pkts_in_queue = sum(packets_in_queue) / len(packets_in_queue)
     p_idle = c_idle/c_observation
 
     return average_pkts_in_queue, p_idle
 
-
+# Search for index to insert event
+# Binary search event_list (based on time) and return the index where the
+# new event should be placed.
+# @param event_list - list: List of event tuples (event_type, time).
+# @param event_ctr - int: Beginning index to search from (used for when
+#                       the new event index is guaranteed to not be
+#                       before event_ctr.
+# @param time - float: Time value of the new event to search event_list by.
+# @return int: The index to insert the new event into event_list.
 def insert_event(event_list, event_ctr, time):
     first = event_ctr
     last = len(event_list)-1
@@ -111,14 +140,14 @@ def insert_event(event_list, event_ctr, time):
                 last = midpoint-1
 
     return first       
-    # while event_array[index][1] is not None and event_array[index][1] < time and index < len(event_array)-1:
-    #     index+=1
 
-    # event_list.insert(index, (DEPARTURE, time))
-
-
+# Simulate an M/M/1/K queue
+# Simulate a queue/buffer with length K that processes arrival,
+# departure, and observer event packets.
+# @param rho - float: Rho parameter for utilization of the queue.
+# @param K - int: K parameter for length of the queue/buffer.
+# @return (float, float): A tuple of (E[N], P(IDLE), P(LOSS))
 def finite_buffer(rho, K):
-    # Generate observer array, arrival array, and departure array 
     arrival_rate = (rho * C)/L
     observer_rate = 5 * arrival_rate
 
@@ -130,6 +159,7 @@ def finite_buffer(rho, K):
     event_array = []
     packets_in_queue = []
 
+    # Generate observer array and arrival array
     while packet_arrival_time < T:
         packet_arrival_time += generate_random(arrival_rate)
         arrival_array.append(packet_arrival_time)
@@ -147,13 +177,15 @@ def finite_buffer(rho, K):
     
     event_array.sort(key=lambda x: x[1])
 
-    # Simulation start here
+    # Begin simulation
+
+    # Counters
     c_arrival = 0
     c_departure = 0
     c_observation = 0
     c_idle = 0
     c_generated = 0
-    c_droped = 0
+    c_dropped = 0
 
     queue = 0
     departure_time = 0
@@ -165,52 +197,53 @@ def finite_buffer(rho, K):
         if event_array[evt_ctr][0] == ARRIVAL:
             c_generated+=1
             packet_arrival_time = event_array[evt_ctr][1]
-            if queue < K:
+            # If queue is full, then drop the newly-arrived event
+            if queue >= K:
+                c_dropped+=1
+            # Otherwise, calculate appropriate departure time and departure event add to list
+            else:
                 c_arrival+=1
                 queue+=1 
-                # time = event_array[evt_ctr][1] + (generate_random(1/L))/C
 
                 service_time = (generate_random(1/L))/C
                 if packet_arrival_time > departure_time:
                     departure_time = packet_arrival_time + service_time
                 else: 
                     departure_time+=service_time
-                # index = 0
-                # while event_array[index][1] is not None and event_array[index][1] < time and index < len(event_array)-1:
-                #     index+=1
                 
-                # event_array.insert(insert_event(event_array, evt_ctr, departure_time), [DEPARTURE, departure_time])
+                # index = insert_event(event_array, evt_ctr, departure_time)
+                # event_array[index:index] = [(DEPARTURE, departure_time)]
+                event_array.insert(insert_event(event_array, evt_ctr, departure_time), (DEPARTURE, departure_time))
 
-                # insert_event(event_array, packet_arrival_time + (generate_random(1/L))/C)
-            else:
-                c_droped+=1       
-        if event_array[evt_ctr][0] == DEPARTURE:
+        elif event_array[evt_ctr][0] == DEPARTURE:
             c_departure+=1
             queue-=1
-        if event_array[evt_ctr][0] == OBSERVER:
+        elif event_array[evt_ctr][0] == OBSERVER:
             c_observation+=1
+            packets_in_queue.append(c_arrival-c_departure)
+            # If all packets that arrived have departed, then queue is empty
             if c_arrival == c_departure:
                 c_idle+=1
-            packets_in_queue.append(c_arrival-c_departure)
 
         evt_ctr += 1
     
     average_pkts_in_queue = sum(packets_in_queue) / len(packets_in_queue)
     p_idle = c_idle/c_observation
 
-    return average_pkts_in_queue, p_idle, c_droped/c_generated
+    return average_pkts_in_queue, p_idle, c_dropped/c_generated
 
-
+# Invoke the infinite_buffer() simulator, print the results
 def simulate_infinite(rho):
     r_avrg_pkts, r_p_idle = infinite_buffer(rho)
     print(str(rho) + "," + str(r_avrg_pkts) + "," + str(r_p_idle))
 
-
+# Invoke the finite_buffer() simulator, print the results
 def simulate_finite(rho, K):
     r_avrg_pkts, r_p_idle, p_pkt_drop = finite_buffer(rho, K)
     print(str(rho) + "," + str(r_avrg_pkts) + "," + str(r_p_idle) + "," + str(p_pkt_drop))
 
-
+# Run the M/M/1[/K] queue simulator based on the command line options provided
+# Can call 'python [python_filename].py --help' to view all options.
 def main():
     global T
 
@@ -230,6 +263,7 @@ def main():
     T = args.time_units
     rho = args.rho
 
+    # Calculate the mean/variance for lab 1 question 1
     if args.question1:
         expo_random_array = generate_random_array(75)
 
@@ -242,7 +276,9 @@ def main():
 
         exit()
 
+    # Header for the CSV format output indicating the type for each column
     header = '"Rho","E[N]","P(IDLE)"'
+    # P(LOSS) is only needed for finite buffer simulations
     if K is not None:
         header += ',"P(LOSS)"'
     print(header)
