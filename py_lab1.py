@@ -1,6 +1,7 @@
+import argparse
 import random
 import math
-import argparse
+import heapq
 
 ####################################################
 ############### Event type constants ###############
@@ -78,15 +79,15 @@ def infinite_buffer(rho):
 
     # Generate Event array
     for arrival in arrival_array:
-        event_array.append((ARRIVAL, arrival))
+        event_array.append((arrival, ARRIVAL))
     
     for departure in departure_array:
-        event_array.append((DEPARTURE, departure))
+        event_array.append((departure, DEPARTURE))
     
     for observer in observer_array:
-        event_array.append((OBSERVER, observer))
+        event_array.append((observer, OBSERVER))
     
-    event_array.sort(key=lambda x: x[1])
+    event_array.sort(key=lambda x: x[0])
 
     # Begin simulation
 
@@ -98,11 +99,11 @@ def infinite_buffer(rho):
 
     for event in event_array:
         # print(event)
-        if event[0] == ARRIVAL:
+        if event[1] == ARRIVAL:
             c_arrival+=1
-        elif event[0] == DEPARTURE:
+        elif event[1] == DEPARTURE:
             c_departure+=1
-        elif event[0] == OBSERVER:
+        elif event[1] == OBSERVER:
             c_observation+=1
             packets_in_queue.append(c_arrival-c_departure)
             # If all packets that arrived have departed, then queue is empty
@@ -113,33 +114,6 @@ def infinite_buffer(rho):
     p_idle = c_idle/c_observation
 
     return average_pkts_in_queue, p_idle
-
-# Search for index to insert event
-# Binary search event_list (based on time) and return the index where the
-# new event should be placed.
-# @param event_list - list: List of event tuples (event_type, time).
-# @param event_ctr - int: Beginning index to search from (used for when
-#                       the new event index is guaranteed to not be
-#                       before event_ctr.
-# @param time - float: Time value of the new event to search event_list by.
-# @return int: The index to insert the new event into event_list.
-def insert_event(event_list, event_ctr, time):
-    first = event_ctr
-    last = len(event_list)-1
-    while first <= last:            
-        midpoint = (first + last)//2
-        if first == last:
-            if event_list[midpoint][1] < time:
-                return midpoint+1
-            else: 
-                return midpoint
-        else:
-            if event_list[midpoint][1] < time:
-                first = midpoint+1
-            else:
-                last = midpoint-1
-
-    return first       
 
 # Simulate an M/M/1/K queue
 # Simulate a queue/buffer with length K that processes arrival,
@@ -170,13 +144,11 @@ def finite_buffer(rho, K):
 
     # Generate Event array
     for arrival in arrival_array:
-        event_array.append((ARRIVAL, arrival))
+        heapq.heappush(event_array, (arrival, ARRIVAL))
     
     for observer in observer_array:
-        event_array.append((OBSERVER, observer))
+        heapq.heappush(event_array, (observer, OBSERVER))
     
-    event_array.sort(key=lambda x: x[1])
-
     # Begin simulation
 
     # Counters
@@ -190,13 +162,12 @@ def finite_buffer(rho, K):
     queue = 0
     departure_time = 0
 
-    evt_ctr = 0
-
-    while evt_ctr < len(event_array):
+    while len(event_array) > 0:
         # print(len(event_array))
-        if event_array[evt_ctr][0] == ARRIVAL:
+        event = heapq.heappop(event_array)
+        if event[1] == ARRIVAL:
             c_generated+=1
-            packet_arrival_time = event_array[evt_ctr][1]
+            packet_arrival_time = event[0]
             # If queue is full, then drop the newly-arrived event
             if queue >= K:
                 c_dropped+=1
@@ -211,21 +182,17 @@ def finite_buffer(rho, K):
                 else: 
                     departure_time+=service_time
                 
-                # index = insert_event(event_array, evt_ctr, departure_time)
-                # event_array[index:index] = [(DEPARTURE, departure_time)]
-                event_array.insert(insert_event(event_array, evt_ctr, departure_time), (DEPARTURE, departure_time))
+                heapq.heappush(event_array, (departure_time, DEPARTURE))
 
-        elif event_array[evt_ctr][0] == DEPARTURE:
+        elif event[1] == DEPARTURE:
             c_departure+=1
             queue-=1
-        elif event_array[evt_ctr][0] == OBSERVER:
+        elif event[1] == OBSERVER:
             c_observation+=1
             packets_in_queue.append(c_arrival-c_departure)
             # If all packets that arrived have departed, then queue is empty
             if c_arrival == c_departure:
                 c_idle+=1
-
-        evt_ctr += 1
     
     average_pkts_in_queue = sum(packets_in_queue) / len(packets_in_queue)
     p_idle = c_idle/c_observation
