@@ -15,7 +15,7 @@ OBSERVER = 2
 ####################################################
 L = 2000
 C = 1000000
-T = 100
+T = 1000
 
 # Generate exponential random variable
 # Generate a variable based on a Poisson distribution following:
@@ -120,7 +120,7 @@ def infinite_buffer(rho):
 # departure, and observer event packets.
 # @param rho - float: Rho parameter for utilization of the queue.
 # @param K - int: K parameter for length of the queue/buffer.
-# @return (float, float): A tuple of (E[N], P(IDLE), P(LOSS))
+# @return (float, float, float): A tuple of (E[N], P(IDLE), P(LOSS))
 def finite_buffer(rho, K):
     arrival_rate = (rho * C)/L
     observer_rate = 5 * arrival_rate
@@ -133,22 +133,15 @@ def finite_buffer(rho, K):
     event_array = []
     packets_in_queue = []
 
-    # Generate observer array and arrival array
+    # Generate arrival and observer events
     while packet_arrival_time < T:
         packet_arrival_time += generate_random(arrival_rate)
-        arrival_array.append(packet_arrival_time)
+        heapq.heappush(event_array, (packet_arrival_time, ARRIVAL))
 
     while observer_time < T:
         observer_time += generate_random(observer_rate)
-        observer_array.append(observer_time)
+        heapq.heappush(event_array, (observer_time, OBSERVER))
 
-    # Generate Event array
-    for arrival in arrival_array:
-        heapq.heappush(event_array, (arrival, ARRIVAL))
-    
-    for observer in observer_array:
-        heapq.heappush(event_array, (observer, OBSERVER))
-    
     # Begin simulation
 
     # Counters
@@ -217,7 +210,7 @@ def main():
     parser = argparse.ArgumentParser(description='Simulate networking packet buffer (ECE358 Lab1)')
     parser.add_argument('-K', '--queue_size', metavar='n', type=int, default=None,
                         help='Size of the queue/buffer (default: infinite)')
-    parser.add_argument('-T', '--time_units', metavar='t', type=int, default=100,
+    parser.add_argument('-T', '--time_units', metavar='t', type=int, default=1000,
                         help='Time units to run each simulation for')
     parser.add_argument('-R', '--rho', metavar='r', type=float, default=None,
                         help='Rho value to simulate (no value implies range from [0.4, 10])')
@@ -250,9 +243,16 @@ def main():
         header += ',"P(LOSS)"'
     print(header)
 
-    queue_utilization_array = list(range(40, 200, 10))
-    queue_utilization_array.extend(list(range(200,500,20)))
-    queue_utilization_array.extend(list(range(500,1000,40)))
+    queue_utilization_array = []
+    if rho is None:
+        if K is None:
+            queue_utilization_array.extend(list(range(25, 100, 10)))
+        else:
+            queue_utilization_array.extend(list(range(40, 200, 10)))
+            queue_utilization_array.extend(list(range(200,500,20)))
+            queue_utilization_array.extend(list(range(500,1000,40)))
+    else:
+        queue_utilization_array.append(rho * 100)
 
     if K is None:
         if rho is None:
