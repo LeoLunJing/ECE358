@@ -255,17 +255,11 @@ def main():
         queue_utilization_array.append(rho * 100)
 
     if K is None:
-        if rho is None:
-            for rho_index in queue_utilization_array:
-                simulate_infinite(rho_index/100)
-        else:
-            simulate_infinite(rho)
+        for rho_index in queue_utilization_array:
+            simulate_infinite(rho_index/100)
     else:
-        if rho is None:
-            for rho_index in queue_utilization_array:
-                simulate_finite(rho_index/100, K)
-        else:
-            simulate_finite(rho, K)
+        for rho_index in queue_utilization_array:
+            simulate_finite(rho_index/100, K)
 
 # END MAIN
 
