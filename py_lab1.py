@@ -48,18 +48,18 @@ def generate_random_array(lambda_para):
 # @param rho - float: Rho parameter for utilization of the queue.
 # @return (float, float): A tuple of (E[N], P(IDLE))
 def infinite_buffer(rho):
-    arrival_rate = (rho * C)/L
-    observer_rate = 5 * arrival_rate
+    arrival_rate = (rho * C)/L          # get lambad based on traffic intensity
+    observer_rate = 5 * arrival_rate    # observer rate is at least 5 times of arrival rate
 
-    packet_arrival_time = 0
-    departure_time = 0
-    observer_time = 0
+    packet_arrival_time = 0             # initialize arrival time of first packet
+    departure_time = 0                  # initialize departure time of first packet
+    observer_time = 0                   # initialize observer time of first observation event
 
-    arrival_array = []
-    departure_array = []
-    observer_array = []
-    event_array = []
-    packets_in_queue = []
+    arrival_array = []                  # arrrival event list
+    departure_array = []                # departure event list
+    observer_array = []                 # observer event list
+    event_array = []                    # event list of all three different events
+    packets_in_queue = []               # array to store number of packets in the queue at differnt observation time
 
     # Generate observer array, arrival array, and departure array 
     while packet_arrival_time < T:
@@ -92,10 +92,10 @@ def infinite_buffer(rho):
     # Begin simulation
 
     # Counters
-    c_arrival = 0
-    c_departure = 0
-    c_observation = 0
-    c_idle = 0
+    c_arrival = 0           # number of arrived packets
+    c_departure = 0         # number of departured packets
+    c_observation = 0       # number of observations
+    c_idle = 0              # number of idle status when observe
 
     for event in event_array:
         # print(event)
@@ -122,16 +122,14 @@ def infinite_buffer(rho):
 # @param K - int: K parameter for length of the queue/buffer.
 # @return (float, float, float): A tuple of (E[N], P(IDLE), P(LOSS))
 def finite_buffer(rho, K):
-    arrival_rate = (rho * C)/L
-    observer_rate = 5 * arrival_rate
+    arrival_rate = (rho * C)/L              # get lambad based on traffic intensity
+    observer_rate = 5 * arrival_rate        # observer rate is at least 5 times of arrival rate
 
-    packet_arrival_time = 0
-    observer_time = 0
+    packet_arrival_time = 0                 # initialize arrival time of first packet
+    observer_time = 0                       # initialize observer time of first observation event
 
-    arrival_array = []
-    observer_array = []
-    event_array = []
-    packets_in_queue = []
+    event_array = []                        # event list of all three different events
+    packets_in_queue = []                   # array to store number of packets in the queue at differnt observation time
 
     # Generate arrival and observer events
     while packet_arrival_time < T:
@@ -145,15 +143,15 @@ def finite_buffer(rho, K):
     # Begin simulation
 
     # Counters
-    c_arrival = 0
-    c_departure = 0
-    c_observation = 0
-    c_idle = 0
-    c_generated = 0
-    c_dropped = 0
+    c_arrival = 0           # number of packets that successfully enter the queue
+    c_departure = 0         # number of packets departured from the queue
+    c_observation = 0       # number of obervation points
+    c_idle = 0              # number of idle cases occurred at observation point
+    c_generated = 0         # number of all generated packets
+    c_dropped = 0           # number of packets that are dropped
 
-    queue = 0
-    departure_time = 0
+    queue = 0               # the current number of packets in queue
+    departure_time = 0      # initiallize the departure time of the first packet    
 
     while len(event_array) > 0:
         # print(len(event_array))
@@ -225,22 +223,24 @@ def main():
 
     # Calculate the mean/variance for lab 1 question 1
     if args.question1:
-        expo_random_array = generate_random_array(75)
+        random_array = generate_random_array(75)
 
-        mean = sum(expo_random_array) / 1000
-        variance = sum([(number - mean)**2 for number in expo_random_array]) / 1000
+        mean = sum(random_array) / 1000
+        t = 0
+        for rannum in random_array:
+            t += (rannum - mean)**2
+        variance = t / 1000
 
-        # print(expo_random_array)
-        print('mean ' + str(mean))
-        print('variance ' + str(variance))
+        print("Mean: " + str(mean))
+        print("Variance: " + str(variance))
 
         exit()
 
     # Header for the CSV format output indicating the type for each column
-    header = '"Rho","E[N]","P(IDLE)"'
+    header = 'Rho,E[N],P(IDLE)'
     # P(LOSS) is only needed for finite buffer simulations
     if K is not None:
-        header += ',"P(LOSS)"'
+        header += ',P(LOSS)'
     print(header)
 
     queue_utilization_array = []
