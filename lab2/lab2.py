@@ -138,6 +138,7 @@ def simulate():
         trans_packet = node_head[trans_node]
         trans_end_at_src = trans_start_at_src + trans_packet.t_trans_delay
         c_tx_attempts+=1
+        node_head[trans_node].c_channel_busy += 1
 
         # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
 
@@ -163,7 +164,7 @@ def simulate():
 
                         if not persistent_simulation:
                             node_head[i].c_channel_busy += 1
-                            if node_head[i].c_channel_busy < 10:
+                            if node_head[i].c_channel_busy <= 10:
                                 node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
                             else:
                                 node_head[i] = getNextPacket(node_head, i, trans_start_at_src + getPropagationDelay(trans_node, i))
@@ -173,6 +174,7 @@ def simulate():
                     f_collision = True
                     collision_nodes.append(i)
                     c_tx_attempts+=1
+                    node_head[i].c_channel_busy += 1
                     # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
                     if t_collision_detected == 0 or t_collision_detected > (node_head[i].t_trans + getPropagationDelay(i, trans_node)):
                         t_collision_detected = node_head[i].t_trans + getPropagationDelay(i, trans_node)
@@ -183,7 +185,7 @@ def simulate():
             for i in collision_nodes:
             # update the wait time
                 node_head[i].c_collision += 1
-                if node_head[i].c_collision < 10:
+                if node_head[i].c_collision <= 10:
                     # Assuming all collision detections are relative to collision detected by
                     # transmitting node, + propagation delay from transmitting node to colliding nodes
                     node_head[i].t_trans = t_collision_detected + getPropagationDelay(i, trans_node) + calcExpBackoff(node_head[i].c_collision)
