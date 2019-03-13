@@ -24,6 +24,8 @@ T = 1000
 T_prop = D / S
 # T_trans: The transmission delay for one packet due to fixed packet size and channal speed (0.0015)
 T_trans = L / R
+# persistent_simulation: Indicates whether to simulate persistent or non-persistent CSMA/SD
+persistent_simulation = True
 
 ########## Global Counters for Analysis ############
 
@@ -60,6 +62,7 @@ class Packet:
         self.t_trans = t_arrival # the actual transmission start time
         self.c_collision = 0
         self.t_remove = 0
+        self.c_channel_busy = 0
 
     def transmit(self):
         return 0
@@ -156,12 +159,17 @@ def simulate():
 
                     # Bus busy
                     if node_head[i].t_trans < trans_end_at_src + getPropagationDelay(trans_node, i):
-                        node_head[i].t_trans = trans_end_at_src + getPropagationDelay(trans_node, i)                    
-                    #if non-presistent:
+                        node_head[i].t_trans = trans_end_at_src + getPropagationDelay(trans_node, i)
+
+                        if not persistent_simulation:
+                            node_head[i].c_channel_busy += 1
+                            if node_head[i].c_channel_busy < 10:
+                                node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
+                            else:
+                                node_head[i] = getNextPacket(node_head, i, trans_start_at_src + getPropagationDelay(trans_node, i))
 
                 # Collision
                 else:
-                # elif node_head[i].t_trans <= trans_start_at_src + getPropagationDelay(trans_node, i):
                     f_collision = True
                     collision_nodes.append(i)
                     c_tx_attempts+=1
@@ -174,10 +182,10 @@ def simulate():
             collision_nodes.append(trans_node)
             for i in collision_nodes:
             # update the wait time
+                node_head[i].c_collision += 1
                 if node_head[i].c_collision < 10:
                     # Assuming all collision detections are relative to collision detected by
                     # transmitting node, + propagation delay from transmitting node to colliding nodes
-                    node_head[i].c_collision += 1
                     node_head[i].t_trans = t_collision_detected + getPropagationDelay(i, trans_node) + calcExpBackoff(node_head[i].c_collision)
 
                 else:
@@ -190,12 +198,13 @@ def simulate():
 
             # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
 
-    print(c_tx_success/c_tx_attempts) 
+    print(str(N) + ',' + str(c_tx_success/c_tx_attempts))
 
 def main():
     global N
     global A
     global T
+    global persistent_simulation
 
     parser = argparse.ArgumentParser(description='Simulate CSMA/CD of nodes (ECE358 Lab 2)')
     # parser.add_argument('-N', '--num_nodes', metavar='n', type=int, default=20,
@@ -204,14 +213,16 @@ def main():
                         help='Average packet arrival rate [packets/second]')
     parser.add_argument('-T', '--time', metavar='t', type=int, default=1000,
                         help='Time of the simulation')    
-    parser.add_argument('-P', '--non_persistent', metavar='p', type=bool, default=False,
-                        help='Persistent/Non-persistent CSMA/CD simulation (default: persistent)')
+    parser.add_argument('-P', '--non_persistent', action='store_true',
+                        help='Non-persistent CSMA/CD simulation (default: persistent)')
 
     args = parser.parse_args()
     # N = args.num_nodes
     A = args.arrival_rate
     T = args.time    
+    persistent_simulation = not args.non_persistent
 
+    print('# Nodes (N),Efficiency')
     for n in range(20, 120, 20):
         N = n
         # print(str("start N = ") + str(n))
