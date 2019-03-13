@@ -21,9 +21,9 @@ S = 2 * 10**8
 # T: Simulation time
 T = 1000
 # T_prop: The propagation delay between two neighboring nodes due to fixed propagation speed and distance (0.00000005)
-T_prop = D / S
+T_prop = float(D) / S
 # T_trans: The transmission delay for one packet due to fixed packet size and channal speed (0.0015)
-T_trans = L / R
+T_trans = float(L) / R
 # persistent_simulation: Indicates whether to simulate persistent or non-persistent CSMA/SD
 persistent_simulation = True
 
@@ -122,7 +122,12 @@ def simulate():
     global c_tx_attempts
     global c_tx_success    
 
+    c_tx_success = 0
+    c_tx_attempts = 0
+
     node_head = [None,] * N
+    end_time = 0
+#    prev_end_time = 0
 
     for i in range(N):
         node_head[i] = Packet(i, generate_random(A))
@@ -145,7 +150,7 @@ def simulate():
         # Flag to check if collision occur
         f_collision = False
         collision_nodes = []
-        t_collision_detected = 0
+        t_collision_detected = -1
 
         # print("Txing node index: " + str(trans_node) + ", start: " + str(trans_start_at_src) + ", end: " + str(trans_end_at_src))
 
@@ -176,7 +181,7 @@ def simulate():
                     c_tx_attempts+=1
                     node_head[i].c_channel_busy += 1
                     # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
-                    if t_collision_detected == 0 or t_collision_detected > (node_head[i].t_trans + getPropagationDelay(i, trans_node)):
+                    if t_collision_detected == -1 or t_collision_detected > (node_head[i].t_trans + getPropagationDelay(i, trans_node)):
                         t_collision_detected = node_head[i].t_trans + getPropagationDelay(i, trans_node)
         
         # If a collision has occurred
@@ -197,10 +202,19 @@ def simulate():
             # if node_head[trans_node].c_collision == 0:
             c_tx_success += 1
             node_head[trans_node] = getNextPacket(node_head, trans_node, trans_end_at_src)
-
+            end_time = trans_end_at_src
+#            difference = end_time - prev_end_time
+#            if difference < T_trans:
+#                print('X: ' + str(end_time - prev_end_time))
+#            else:
+#                print('-: ' + str(end_time - prev_end_time))
+#            prev_end_time = end_time
             # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
 
-    print(str(N) + ',' + str(c_tx_success/c_tx_attempts))
+#    print('End time: ' + str(end_time) + ', c_tx_success: ' + str(c_tx_success))
+    efficiency = c_tx_success / c_tx_attempts
+    throughput = float(c_tx_success * L) / (1000000.0 * end_time)
+    print(str(N) + ',' + str(efficiency) + ',' + str(throughput))
 
 def main():
     global N
@@ -224,14 +238,14 @@ def main():
     T = args.time    
     persistent_simulation = not args.non_persistent
 
-    print('# Nodes (N),Efficiency')
+    print('# Nodes (N),Efficiency,Throughput [Mbps]')
     for n in range(20, 120, 20):
         N = n
         # print(str("start N = ") + str(n))
         simulate()       
 
-    # N=20
-    # simulate()
+#    N=1
+#    simulate()
 
 # END MAIN
 
