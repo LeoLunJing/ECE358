@@ -80,10 +80,10 @@ def allNodesEmpty(node_head):
 
 
 def findNextPacket(node_head):
-    trans_time = 2*T    # set to maximum
+    trans_time = None   # set to maximum
     for i in range(N):
         if node_head[i] is not None:
-            if trans_time >= node_head[i].t_trans:
+            if trans_time == None or trans_time >= node_head[i].t_trans:
                 trans_time = node_head[i].t_trans
                 next_node = i
 
@@ -127,7 +127,7 @@ def simulate():
 
     node_head = [None,] * N
     end_time = 0
-#    prev_end_time = 0
+    # prev_end_time = 0
 
     for i in range(N):
         node_head[i] = Packet(i, generate_random(A))
@@ -143,7 +143,7 @@ def simulate():
         trans_packet = node_head[trans_node]
         trans_end_at_src = trans_start_at_src + trans_packet.t_trans_delay
         c_tx_attempts+=1
-        node_head[trans_node].c_channel_busy += 1
+        node_head[trans_node].c_channel_busy = 0
 
         # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
 
@@ -165,21 +165,24 @@ def simulate():
 
                     # Bus busy
                     if node_head[i].t_trans < trans_end_at_src + getPropagationDelay(trans_node, i):
-                        node_head[i].t_trans = trans_end_at_src + getPropagationDelay(trans_node, i)
+                        if persistent_simulation:
+                            node_head[i].t_trans = trans_end_at_src + getPropagationDelay(trans_node, i)
 
                         if not persistent_simulation:
-                            node_head[i].c_channel_busy += 1
-                            if node_head[i].c_channel_busy <= 10:
-                                node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
-                            else:
-                                node_head[i] = getNextPacket(node_head, i, trans_start_at_src + getPropagationDelay(trans_node, i))
+                            while node_head[i] is not None and node_head[i].t_trans < trans_end_at_src + getPropagationDelay(trans_node, i):
+                                node_head[i].c_channel_busy += 1
+                                # node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
+                                if node_head[i].c_channel_busy <= 10:
+                                    node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
+                                else:
+                                    node_head[i] = getNextPacket(node_head, i, node_head[i].t_trans)
 
                 # Collision
                 else:
                     f_collision = True
                     collision_nodes.append(i)
                     c_tx_attempts+=1
-                    node_head[i].c_channel_busy += 1
+                    node_head[i].c_channel_busy = 0
                     # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
                     if t_collision_detected == -1 or t_collision_detected > (node_head[i].t_trans + getPropagationDelay(i, trans_node)):
                         t_collision_detected = node_head[i].t_trans + getPropagationDelay(i, trans_node)
@@ -201,20 +204,20 @@ def simulate():
         else:
             # if node_head[trans_node].c_collision == 0:
             c_tx_success += 1
-            node_head[trans_node] = getNextPacket(node_head, trans_node, trans_end_at_src)
             end_time = trans_end_at_src
 #            difference = end_time - prev_end_time
 #            if difference < T_trans:
-#                print('X: ' + str(end_time - prev_end_time))
+#                print('X: Node [' + str(trans_node) + '] Start: ' + str(trans_start_at_src) + ', End: ' + str(end_time) + ' (' + str(end_time - prev_end_time) + ') - ' + str(node_head[trans_node].t_arrival))
 #            else:
-#                print('-: ' + str(end_time - prev_end_time))
+#                print('-: Node [' + str(trans_node) + '] Start: ' + str(trans_start_at_src) + ', End: ' + str(end_time) + ' (' + str(end_time - prev_end_time) + ') - ' + str(node_head[trans_node].t_arrival))
 #            prev_end_time = end_time
+            node_head[trans_node] = getNextPacket(node_head, trans_node, trans_end_at_src)
             # print(str(c_tx_success) + " / " + str(c_tx_attempts)  )
 
 #    print('End time: ' + str(end_time) + ', c_tx_success: ' + str(c_tx_success))
     efficiency = c_tx_success / c_tx_attempts
     throughput = float(c_tx_success * L) / (1000000.0 * end_time)
-    print(str(N) + ',' + str(efficiency) + ',' + str(throughput))
+    print(str(N) + ',' + str(efficiency) + ',' + str(throughput) + ', ' + str(end_time))
 
 def main():
     global N
@@ -238,7 +241,7 @@ def main():
     T = args.time    
     persistent_simulation = not args.non_persistent
 
-    print('# Nodes (N),Efficiency,Throughput [Mbps]')
+    print('# Nodes (N),Efficiency,Throughput [Mbps],End time [s]')
     for n in range(20, 120, 20):
         N = n
         # print(str("start N = ") + str(n))
