@@ -24,12 +24,12 @@ will give the following:
 >                         persistent)
 
 To run the test for the persistent CSMA/CD simulation with A = 7, 10, 20:
-> python3 py\_lab1.py -A 7
-> python3 py\_lab1.py -A 10
-> python3 py\_lab1.py -A 20
+> python3 lab2.py -A 7
+> python3 lab2.py -A 10
+> python3 lab2.py -A 20
 
 To run the test for the non-persistent CSMA/CD simulation with A = 7, 10, 20:
-> python3 py\_lab1.py --non\_persistent -A 7
-> python3 py\_lab1.py --non\_persistent -A 10
-> python3 py\_lab1.py --non\_persistent -A 20
+> python3 lab2.py --non\_persistent -A 7
+> python3 lab2.py --non\_persistent -A 10
+> python3 lab2.py --non\_persistent -A 20
 
