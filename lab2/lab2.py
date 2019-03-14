@@ -199,16 +199,18 @@ def simulate():
                             # It is possible that despite adding some backoff/waiting time, the channel is still detected to be busy
                             # due to the same transmitting node. In this case, loop until the wait time is sufficiently large.
                             while node_head[i] is not None and node_head[i].t_trans < trans_end_at_src + getPropagationDelay(trans_node, i):
-                                node_head[i].c_channel_busy += 1
 
-                                # This implementation does not cap the backoff for the channel busy counter
+                                # This implementation caps the counter limit at 10 and continuously waits to transmit the same packet
+                                if node_head[i].c_channel_busy < 10:
+                                    node_head[i].c_channel_busy += 1
                                 node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
 
-                                # This implementation caps the backoff for the channel busy counter similar to the backoff for the collision counter
-#                                if node_head[i].c_channel_busy <= 10:
-#                                    node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
-#                                else:
-#                                    node_head[i] = getNextPacket(node_head, i, node_head[i].t_trans)
+                                # This implementation drops the packet after reaching the counter limit
+                                # node_head[i].c_channel_busy += 1
+                                # if node_head[i].c_channel_busy <= 10:
+                                #     node_head[i].t_trans += calcExpBackoff(node_head[i].c_channel_busy)
+                                # else:
+                                #     node_head[i] = getNextPacket(node_head, i, node_head[i].t_trans)
 
                 # Collision
                 else:
