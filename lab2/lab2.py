@@ -57,15 +57,13 @@ class Packet:
     t_trans_delay = T_trans # transmission delay
 
     def __init__(self, node, t_arrival):
-        self.t_arrival = t_arrival 
-        self.node = node
-        self.t_trans = t_arrival # the actual transmission start time
-        self.c_collision = 0
-        self.t_remove = 0
-        self.c_channel_busy = 0
+        self.t_arrival = t_arrival      # the time when the packet is generated on node
+        self.node = node                # the index of node where this packet generated
+        self.t_trans = t_arrival        # the actual transmission start time
+        self.c_collision = 0            # the number of collisions the packet has expereienced when it is being transmitted
+        self.t_remove = 0               # the time when the packet has been removed from the node, either been transmitted or droped
+        self.c_channel_busy = 0         # the counter to record how many times the packet found the bus is busy when it attempts to tranmit
 
-    def transmit(self):
-        return 0
 
 # Generate value from a random distribution
 # Generate a random value from the Poisson distribution given parameter
